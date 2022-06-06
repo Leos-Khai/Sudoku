@@ -1,1 +1,6 @@
-env\
+env/
+*.txt
+tmpsolver.py
+/logs
+__pycache__/
+accessible_output2/
