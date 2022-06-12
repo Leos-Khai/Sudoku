@@ -42,6 +42,8 @@ class SudokuGenerator:
         self.print_grid("full solution")
         self.remove_numbers_from_grid()
         self.print_grid("with removed numbers")
+        self.solve_input_sudoku()
+        self.print_grid("resolving")
         return
 
     def print_grid(self, grid_name=None):

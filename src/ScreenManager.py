@@ -1,5 +1,4 @@
 import arcade
-from screen import View
 
 
 class ScreenControl(arcade.Window):
@@ -11,6 +10,9 @@ class ScreenControl(arcade.Window):
     def show(self, view):
         self.view_list.append(view)
         self.show_view(view)
+
+    def output(self, text: str):
+        self.speech.output(text)
 
     def on_key_press(self, key, key_modifiers):
         if key == arcade.key.ESCAPE:

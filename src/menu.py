@@ -86,5 +86,4 @@ class Menu(View):
         elif key == arcade.key.END:
             self.scroll(+len(self.menu_item))
         elif key == arcade.key.RETURN:
-            self.window.speech.output(f"Trigger {self.menu_item[self.menu_pos]}", True)
             self.menu_item[self.menu_pos].invoke()
