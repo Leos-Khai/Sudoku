@@ -1,0 +1,26 @@
+on_update()
+for i in range 81
+get all the error tiles and put them into a list.
+and return them
+maybe mode setting.
+
+
+only redraw object that changed. using a copy of last array.
+Using dictionary to map name and sound object. in a class
+
+
+Game rules:
+- each row cant contain the same number as in the column and sector.
+- optional diaganal cant share the same number.
+
+Board and program
+- 3 by 3 sector in a 3 by 3 board.
+Modifieable number after placement.
+
+Display
+Black background on white text
+Font arial
+Highlighted row column. when your focussing on a cell.
+Highlighted in a    color when its conflicted, both the new number and existing number.
+
+Program classess:

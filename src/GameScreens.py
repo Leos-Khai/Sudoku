@@ -19,6 +19,7 @@ class SudokuBoard(View):
         super().__init__(prior_screen)
         self.counter = 0
         self.path = []
+        self.num_sprites = arcade.SpriteList()
         self.grid = []
         self.grid_x = 0
         self.grid_y = 0
