@@ -1,6 +1,10 @@
 env/
-*.txt
-tmpsolver.py
 /logs
 __pycache__/
 accessible_output2/
+*.wav
+*.mp3
+ao2/
+**/data
+**/thing
+*.txt

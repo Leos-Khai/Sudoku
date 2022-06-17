@@ -1,3 +1,4 @@
+from codecs import backslashreplace_errors
 import arcade
 from screen import View
 
@@ -35,10 +36,11 @@ class Menu(View):
         View (View): The View object from screen.
     """
 
-    def __init__(self, prior_screen=None):
+    def __init__(self, name="Default Menu", prior_screen=None):
         super().__init__(prior_screen)
         self.menu_pos = 0
         self.menu_item = []
+        self.name = name
 
     def add_item(self, name: str, action):
         """Append a menu item to the list
@@ -49,15 +51,19 @@ class Menu(View):
         """
         self.menu_item.append(MenuItem(name, action))
 
+    def on_show(self):
+        self.window.speech.output(f"{self.name}", True)
+
     def focus_item(self):
         """
         focus_item: Read menu item name
 
         Will read the associated text of a menu item via TTS.
         """
-        self.window.speech.output(f"{self.menu_item[self.menu_pos]}", True)
+        text = f"{self.menu_item[self.menu_pos]}, {self.menu_pos+1} of {len(self.menu_item)}"
+        self.window.speech.output(text, True)
 
-    def scroll(self, direction):
+    def scroll(self, direction: int):
         """
         scroll
 
@@ -85,5 +91,8 @@ class Menu(View):
             self.scroll(-len(self.menu_item))
         elif key == arcade.key.END:
             self.scroll(+len(self.menu_item))
+        elif key == arcade.key.BACKSPACE:
+            if self.prior_screen != None:
+                self.window.show_view(self.prior_screen)
         elif key == arcade.key.RETURN:
             self.menu_item[self.menu_pos].invoke()

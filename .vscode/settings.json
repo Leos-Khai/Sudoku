@@ -3,5 +3,6 @@
         "env": true,
         "__pycache__": true,
         ".gitattributes": true
-    }
+    },
+    "explorer.excludeGitIgnore": true
 }

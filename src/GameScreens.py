@@ -1,13 +1,14 @@
-from ast import Return
 import arcade
 from screen import View
 from menu import Menu, MenuItem
-
+from datetime import datetime
 import copy
 from random import shuffle
+import json
+import glob
+import os
+from cryptography.fernet import Fernet
 
-# import json
-# import glob
 # import numpy
 
 
@@ -18,19 +19,86 @@ class SudokuBoard(View):
         super().__init__(prior_screen)
         self.counter = 0
         self.path = []
+        self.grid = []
         self.grid_x = 0
         self.grid_y = 0
         self.editable_list = []
+        self.error_list = []
         self.editable = False
         self.answer = None
-        self.save_name = None
-        self.completed = False
+        self.save_name = sudoku_game
+        self.completed = None
+
+        # setting base variables
+        self.warn_duplication = True
+
         if sudoku_game != None:
-            # self.load_sudoku(sudoku_game)
-            print("Wait")
+            self.path_to_save = "data/" + self.save_name + "/"
+            self.load_game()
+            try:
+                self.grid = self.load_data["game_grid"]
+                self.answer = self.load_data["completed_grid"]
+                self.completed = self.load_data["completed"]
+                self.editable_list = self.load_data["editable_list"]
+            except:
+                print("error")
+
         else:
             self.generate_game()
             self.generate_editables()
+
+    def save_game(self):
+        if self.save_name == None:
+            return
+
+        if not glob.glob("data/" + self.save_name):
+            os.mkdir("data/" + self.save_name)
+
+        if not glob.glob("data"):
+            os.mkdir("data")
+
+        if not glob.glob("data/" + self.save_name + "/thing.thingy"):
+            key = Fernet.generate_key()
+            with open("data/" + self.save_name + "/thing.thingy", "wb") as file:
+                file.write(key)
+        else:
+            with open("data/" + self.save_name + "/thing.thingy", "rb") as file:
+                key = file.read()
+
+        fernet = Fernet(key)
+        save_data = {
+            "save_name": self.save_name,
+            "game_grid": self.grid,
+            "completed_grid": self.answer,
+            "editable_list": self.editable_list,
+            "completed": self.completed,
+        }
+        encode = json.dumps(save_data, indent=2).encode("utf-8")
+        encrypt = fernet.encrypt(encode)
+        with open("data/" + self.save_name + "/save.dat", "wb") as file:
+            file.write(encrypt)
+
+    def load_game(self):
+        if (
+            self.save_name == None
+            or not glob.glob(self.path_to_save + "thing.thingy")
+            or not glob.glob(self.path_to_save + "save.dat")
+        ):
+            main = MainMenu()
+            self.window.show_view(main)
+            return
+
+        try:
+            with open(self.path_to_save + "thing.thingy", "rb") as file:
+                fernet = Fernet(file.read())
+        except FileNotFoundError:
+            print("File doesn't exist.")
+
+        try:
+            with open(self.path_to_save + "save.dat", "rb") as file:
+                self.load_data = json.loads(fernet.decrypt(file.read()))
+        except FileNotFoundError:
+            print("File not found")
 
     def generate_editables(self):
         for y in range(len(self.grid)):
@@ -43,13 +111,25 @@ class SudokuBoard(View):
         self.generate_solution(self.grid)
         self.answer = copy.deepcopy(self.grid)
         self.remove_numbers_from_grid()
+        self.completed = False
 
     def on_show_view(self):
-        # self.window.printtext()
-        self.window.speech.output("Welcome to a new game of Sudoku.")
+        if self.save_name == None:
+            text = f"Welcome to Sudoku."
+        else:
+            text = f"The save file '{self.save_name}' has been loaded. Enjoy your game."
+        self.window.speech.output(text, True)
 
     def on_update(self, delta_time):
-        pass
+        if self.completed == False:
+            try:
+                for i in range(81):
+                    row = i // 9
+                    col = i % 9
+                    if self.valid_location(self.grid, row, col, self.grid[row][col]):
+                        self.list_of_error.append((row, col))
+            except IndexError:
+                print("An index error has occured")
 
     def focus_grid(self):
         if (self.grid_y, self.grid_x) in self.editable_list:
@@ -61,10 +141,10 @@ class SudokuBoard(View):
             text = f"{self.grid[self.grid_y][self.grid_x]}"
         grid = self.grid
         number = self.grid[self.grid_y][self.grid_x]
-        # grid[self.grid_y][self.grid_x] = 0
-        text = f"{text}, {self.valid_location(grid, self.grid_y, self.grid_x, number)}, {self.find_empty_square(grid)}"
+        grid[self.grid_y][self.grid_x] = 0
+        text = f"{text}, {self.valid_location(grid, self.grid_y, self.grid_x, number)}"
         grid[self.grid_y][self.grid_x] = number
-        self.window.speech.output(text)
+        self.window.speech.output(text, True)
 
     def move_grid(self, y, x):
         tmp_x = self.grid_x
@@ -126,6 +206,7 @@ class SudokuBoard(View):
                 arcade.draw_line(0, y, 800, y, arcade.color.WHITE, 5)
             else:
                 arcade.draw_line(0, y, 800, y, arcade.color.WHITE, 2)
+        start = datetime.now()
         container = []
         start_y = int(800 - 800 / 9)
         for x in self.grid:
@@ -153,6 +234,8 @@ class SudokuBoard(View):
 
         for item in container:
             item.draw()
+        end = datetime.now()
+        print(end - start)
 
     def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
         self.window.speech.output(f"{x}, {y}")
@@ -316,7 +399,7 @@ class SudokuBoard(View):
 
 class MainMenu(Menu):
     def __init__(self):
-        super().__init__()
+        super().__init__(name="Main menu")
         self.add_item("New game", self.new_game)
         self.add_item("Load game", self.load_game)
         self.add_item("Exit game", self.window.close)
@@ -326,4 +409,32 @@ class MainMenu(Menu):
         self.window.show_view(new_game)
 
     def load_game(self):
-        self.window.speech.output("Load game.")
+        # self.window.speech.output("Load game.")
+        if len(glob.glob("data/*")) < 1:
+            print(glob.glob("data/*"))
+            self.window.speech.output("No save files exist.")
+            return
+        load_game = LoadMenu(self)
+        self.window.show_view(load_game)
+
+
+class LoadMenu(Menu):
+    def __init__(self, prior_screen=None):
+        super().__init__(name="Load game", prior_screen=prior_screen)
+        self.save_dir = "data/"
+        if len(glob.glob(self.save_dir)):
+            self.window.show_view(self.prior_screen)
+        self.list_saves()
+
+    def list_saves(self):
+        for i in glob.iglob(self.save_dir + "*"):
+            self.add_item(os.path.basename(i), self.load)
+
+    def load(self):
+        if not glob.glob(
+            "data/" + str(self.menu_item[self.menu_pos]) + "/thing.thingy"
+        ) or not glob.glob("data/" + str(self.menu_item[self.menu_pos]) + "/save.dat"):
+            self.window.speech.output("WARNING:: Save has been corrupted.")
+            return
+        game = SudokuBoard(str(self.menu_item[self.menu_pos]))
+        self.window.show_view(game)
