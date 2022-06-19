@@ -28,15 +28,59 @@ class Test(arcade.Window):
                     )
                 )
 
+    def draw_grid(self):
+        listp = []
+        tmpx = 40
+        tmpy = 760
+        for x in range(11):
+            listp.append([tmpx, tmpy])
+            listp.append([tmpx, 40])
+            tmpx += 80
+        for y in range(11):
+            listp.append([40, tmpy])
+            listp.append([760, tmpy])
+            tmpy -= 80
+        arcade.draw_lines(
+            listp,
+            arcade.color.WHITE,
+            2,
+        )
+        listp2 = [
+            [40, 760],
+            [40, 40],
+            [280, 760],
+            [280, 40],
+            [520, 760],
+            [520, 40],
+            [760, 760],
+            [760, 40],
+            [40, 760],
+            [760, 760],
+            [40, 520],
+            [760, 520],
+            [40, 280],
+            [760, 280],
+            [40, 40],
+            [760, 40],
+        ]
+
+        arcade.draw_lines(
+            listp2,
+            arcade.color.WHITE,
+            5,
+        )
+
     def on_draw(self):
         self.clear()
-        self.sl.draw()
+        self.draw_grid()
+        # self.sl.draw()
 
     def on_update(self, delta_time: float):
         self.frame += 1
-        if self.frame % 2 == -5:
+        if self.frame % 2 == 0:
             for sprite in self.sl:
                 sprite.texture = choice(self.textures)
+                # print(self.sl.index(sprite))
 
 
 Test().run()

@@ -17,9 +17,15 @@ class SudokuBoard(View):
 
     def __init__(self, sudoku_game=None, prior_screen=None):
         super().__init__(prior_screen)
+        # variables for sudoku logic.
         self.counter = 0
         self.path = []
-        self.num_sprites = arcade.SpriteList()
+
+        # variables for sprite and graphics.
+        self.grid_sprite = arcade.SpriteList()
+        self.num_textures = []
+
+        # variable for game logic.
         self.grid = []
         self.grid_x = 0
         self.grid_y = 0
@@ -30,10 +36,11 @@ class SudokuBoard(View):
         self.save_name = sudoku_game
         self.completed = None
 
-        # setting base variables
+        # variables setting for game difficulty.
         self.warn_duplication = True
 
         if sudoku_game != None:
+            self.generate_sprite()
             self.path_to_save = "data/" + self.save_name + "/"
             self.load_game()
             try:
@@ -43,10 +50,28 @@ class SudokuBoard(View):
                 self.editable_list = self.load_data["editable_list"]
             except:
                 print("error")
-
         else:
+            self.generate_sprite()
             self.generate_game()
             self.generate_editables()
+
+    def generate_sprite(self):
+        for i in range(0, 10):
+            name = str(i)
+            image = arcade.create_text_image(name, arcade.color.WHITE, 40)
+            if i == 0:
+                self.num_textures.append(arcade.Texture.create_empty(name, (50, 50)))
+            else:
+                self.num_textures.append(arcade.Texture(name, image=image))
+        for y in range(720, 0, -80):
+            for x in range(80, 800, 80):
+                self.grid_sprite.append(
+                    arcade.Sprite(
+                        texture=self.num_textures[1],
+                        center_x=x,
+                        center_y=y,
+                    )
+                )
 
     def save_game(self):
         if self.save_name == None:
@@ -122,6 +147,13 @@ class SudokuBoard(View):
         self.window.speech.output(text, True)
 
     def on_update(self, delta_time):
+        i = 0
+        for sprite in self.grid_sprite:
+            row = i // 9
+            col = i % 9
+            sprite.texture = self.num_textures[self.grid[row][col]]
+            i += 1
+
         if self.completed == False:
             try:
                 for i in range(81):
@@ -190,53 +222,56 @@ class SudokuBoard(View):
                 self.grid[self.grid_y][self.grid_x] = tmp_number
                 self.focus_grid()
 
+    def draw_grid(self):
+        listp = []
+        tmpx = 40
+        tmpy = 760
+        for x in range(11):
+            listp.append([tmpx, tmpy])
+            listp.append([tmpx, 40])
+            tmpx += 80
+        for y in range(11):
+            listp.append([40, tmpy])
+            listp.append([760, tmpy])
+            tmpy -= 80
+        arcade.draw_lines(
+            listp,
+            arcade.color.WHITE,
+            2,
+        )
+        listp2 = [
+            [40, 760],
+            [40, 40],
+            [280, 760],
+            [280, 40],
+            [520, 760],
+            [520, 40],
+            [760, 760],
+            [760, 40],
+            [40, 760],
+            [760, 760],
+            [40, 520],
+            [760, 520],
+            [40, 280],
+            [760, 280],
+            [40, 40],
+            [760, 40],
+        ]
+
+        arcade.draw_lines(
+            listp2,
+            arcade.color.WHITE,
+            5,
+        )
+
     def on_draw(self):
         self.clear()
-        arcade.start_render()
-        tmp = 0
-        for x in range(0, 800, int(800 / 9)):
-            tmp += 1
-            if tmp in (4, 7):
-                arcade.draw_line(x, 0, x, 800, arcade.color.WHITE, 5)
-            else:
-                arcade.draw_line(x, 0, x, 800, arcade.color.WHITE, 2)
-        tmp = 0
-        for y in range(0, 800, int(800 / 9)):
-            tmp += 1
-            if tmp in (4, 7, 10):
-                arcade.draw_line(0, y, 800, y, arcade.color.WHITE, 5)
-            else:
-                arcade.draw_line(0, y, 800, y, arcade.color.WHITE, 2)
+        # self.draw_grid()
         start = datetime.now()
-        container = []
-        start_y = int(800 - 800 / 9)
-        for x in self.grid:
-            start_x = 0
-            for y in x:
-                if y == 0:
-                    start_x += int(800 / 9)
-                    continue
-                tmp = arcade.Text(
-                    str(y),
-                    start_x,
-                    start_y,
-                    arcade.color.WHITE,
-                    50,
-                    int(800 / 9),
-                    font_name=(
-                        "Times New Roman",
-                        "Times",
-                    ),
-                    align="center",
-                )
-                container.append(tmp)
-                start_x += int(800 / 9)
-            start_y -= int(800 / 9)
-
-        for item in container:
-            item.draw()
+        self.grid_sprite.draw()
         end = datetime.now()
-        print(end - start)
+        self.draw_grid()
+        # print(end - start)
 
     def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
         self.window.speech.output(f"{x}, {y}")
