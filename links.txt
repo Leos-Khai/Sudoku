@@ -1,0 +1,11 @@
+Arcade.create text sprite
+https://api.arcade.academy/en/latest/_modules/arcade/text_pillow.html#create_text_sprite
+
+Arcade Window/View sourcecode:
+https://api.arcade.academy/en/latest/_modules/arcade/application.html#Window.use
+
+arcade keys
+https://api.arcade.academy/en/latest/arcade.key.html
+
+Arcade drawing
+https://api.arcade.academy/en/latest/examples/drawing_primitives.html
