@@ -265,13 +265,13 @@ class SudokuBoard(View):
         )
 
     def on_draw(self):
-        self.clear()
-        # self.draw_grid()
         start = datetime.now()
+        self.clear()
+        self.draw_grid()
+        self.window.ctx.flush()
         self.grid_sprite.draw()
         end = datetime.now()
-        self.draw_grid()
-        # print(end - start)
+        print(end - start)
 
     def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
         self.window.speech.output(f"{x}, {y}")

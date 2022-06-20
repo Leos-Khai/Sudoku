@@ -2,9 +2,9 @@ import arcade
 from random import choice
 
 
-class Test(arcade.Window):
+class Test(arcade.View):
     def __init__(self):
-        super().__init__(800, 800, "Title")
+        super().__init__()
         self.frame = 0
         self.textures = []
         for i in range(10):
@@ -50,8 +50,9 @@ class Test(arcade.Window):
                 )
 
     def on_draw(self):
-        # self.clear(color=(0,0,0,255))
+        self.clear()
         self.draw_grid()
+        self.window.ctx.flush()
         self.sl.draw()
 
     def on_update(self, delta_time: float):
@@ -61,4 +62,13 @@ class Test(arcade.Window):
                 sprite.texture = choice(self.textures)
 
 
-Test().run()
+# Test().run()
+def main():
+    window = arcade.Window(800, 800, "Title")
+    view = Test()
+    window.show_view(view)
+    arcade.run()
+
+
+if __name__ == "__main__":
+    main()
