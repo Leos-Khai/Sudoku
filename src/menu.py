@@ -1,7 +1,7 @@
 from codecs import backslashreplace_errors
 import arcade
 from screen import View
-
+from time import sleep
 
 class MenuItem:
     # Menu items: will be objects added to the Menu class in an array.
@@ -52,6 +52,8 @@ class Menu(View):
         self.menu_item.append(MenuItem(name, action))
 
     def on_show(self):
+        self.window.play_sound("sounds/menu_open.wav")
+        sleep(1)
         self.window.speech.output(f"{self.name}", True)
 
     def focus_item(self):
@@ -80,6 +82,7 @@ class Menu(View):
 
         if tmp != self.menu_pos:
             self.menu_pos = tmp
+            self.window.play_sound("sounds/menu_move.wav")
             self.focus_item()
 
     def on_key_press(self, key, key_modifiers):
@@ -93,6 +96,9 @@ class Menu(View):
             self.scroll(+len(self.menu_item))
         elif key == arcade.key.BACKSPACE:
             if self.prior_screen != None:
+                self.window.play_sound("sounds/menu_close.wav")
                 self.window.show_view(self.prior_screen)
         elif key == arcade.key.RETURN:
+            self.window.play_sound("sounds/menu_trigger.wav")
+            sleep(1)
             self.menu_item[self.menu_pos].invoke()

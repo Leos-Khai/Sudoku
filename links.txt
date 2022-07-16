@@ -1,3 +1,4 @@
+https://www.ibm.com/docs/en/sdse/6.4.0?topic=configuration-ascii-characters-from-33-126
 Arcade.create text sprite
 https://api.arcade.academy/en/latest/_modules/arcade/text_pillow.html#create_text_sprite
 

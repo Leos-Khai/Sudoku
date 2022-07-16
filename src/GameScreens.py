@@ -1,3 +1,4 @@
+from lzma import MODE_FAST
 import arcade
 from screen import View
 from menu import Menu, MenuItem
@@ -32,6 +33,8 @@ class SudokuBoard(View):
         self.editable_list = []
         self.error_list = []
         self.editable = False
+        self.typing = None
+        self.saving = False
         self.answer = None
         self.save_name = sudoku_game
         self.completed = None
@@ -77,11 +80,11 @@ class SudokuBoard(View):
         if self.save_name == None:
             return
 
-        if not glob.glob("data/" + self.save_name):
-            os.mkdir("data/" + self.save_name)
-
         if not glob.glob("data"):
             os.mkdir("data")
+
+        if not glob.glob("data/" + self.save_name):
+            os.mkdir("data/" + self.save_name)
 
         if not glob.glob("data/" + self.save_name + "/thing.thingy"):
             key = Fernet.generate_key()
@@ -130,7 +133,7 @@ class SudokuBoard(View):
         for y in range(len(self.grid)):
             for x in range(len(self.grid[y])):
                 if self.grid[y][x] == 0:
-                    self.editable_list.append((y, x))
+                    self.editable_list.append([y, x])
 
     def generate_game(self):
         self.grid = [[0 for i in range(9)] for i in range(9)]
@@ -145,6 +148,7 @@ class SudokuBoard(View):
         else:
             text = f"The save file '{self.save_name}' has been loaded. Enjoy your game."
         self.window.speech.output(text, True)
+        self.window.sound.stream("sounds/music.mp3", gain=0.05, looping=True)
 
     def on_update(self, delta_time):
         i = 0
@@ -165,7 +169,7 @@ class SudokuBoard(View):
                 print("An index error has occured")
 
     def focus_grid(self):
-        if (self.grid_y, self.grid_x) in self.editable_list:
+        if [self.grid_y, self.grid_x] in self.editable_list:
             if self.grid[self.grid_y][self.grid_x] == 0:
                 text = f"Empty, editable"
             else:
@@ -190,10 +194,51 @@ class SudokuBoard(View):
         if tmp_y + y < len(self.grid) and tmp_y + y >= 0:
             self.grid_y += y
         if self.grid_x != ox or self.grid_y != oy:
+            self.window.sound.play("sounds/board_move.wav", gain=0.2)
             self.focus_grid()
 
     def on_key_press(self, key, modifiers):
-        if self.editable != True:
+        if key == arcade.key.Q and modifiers == arcade.key.MOD_ALT:
+            print(self.window.sound.sounds)
+            print(self.window.sound.synthizer_context.get_events())
+            for event in self.window.sound.synthizer_context.get_events():
+                print("hi")
+                sound = event.source.get_userdata()
+                print(sound)
+                print(event)
+                print(sound.on_finish)
+            
+        if key == arcade.key.S and modifiers == arcade.key.MOD_CTRL:
+            self.saving = True
+            if self.save_name != None:
+                self.save_game()
+                self.window.output("Saving!")
+                self.saving = False
+            else:
+                self.window.output("Type in a save name and press enter to continue.")
+                self.window.play_sound("sounds/typing.wav")
+        elif self.saving == True:
+            if (key >= 97 and key <= 122) or (key >= 48 and key <= 57) or key == 95:
+                if self.typing == None:
+                    self.typing = chr(key)
+                    self.window.play_sound("sounds/single_type.wav")
+                else:
+                    self.typing += chr(key)
+                    self.window.play_sound("sounds/single_type.wav")
+            elif key == arcade.key.BACKSPACE:
+                if self.typing != None and len(self.typing) > 0:
+                    delchar = self.typing[-1]
+                    self.typing = self.typing[:-1]
+                    self.window.output(delchar)
+            elif key == arcade.key.RETURN:
+                self.save_name = self.typing
+                self.typing = None
+                self.save_game()
+                self.window.play_sound("sounds/menu_close.wav")
+                self.window.output("Generating new save file.")
+                self.saving = False
+
+        elif self.editable != True and self.saving != True:
             if key == arcade.key.UP:
                 self.move_grid(-1, 0)
             elif key == arcade.key.DOWN:
@@ -203,23 +248,26 @@ class SudokuBoard(View):
             elif key == arcade.key.RIGHT:
                 self.move_grid(0, 1)
             elif key == arcade.key.BACKSPACE:
-                if (self.grid_y, self.grid_x) in self.editable_list and self.grid[
+                if [self.grid_y, self.grid_x] in self.editable_list and self.grid[
                     self.grid_y
                 ][self.grid_x] != 0:
                     self.grid[self.grid_y][self.grid_x] = 0
+                    self.window.play_sound("sounds/number_delete.wav")
                     self.window.speech.output(f"Removed number")
             elif key == arcade.key.RETURN:
                 if (
                     self.editable == False
-                    and (self.grid_y, self.grid_x) in self.editable_list
+                    and [self.grid_y, self.grid_x] in self.editable_list
                 ):
                     self.editable = True
+                    self.window.play_sound("sounds/typing.wav")
                     self.window.speech.output("Editing")
-        elif self.editable == True:
+        elif self.editable == True and self.saving != True:
             if key > 48 and key < 58:
                 tmp_number = int(chr(key))
                 self.editable = False
                 self.grid[self.grid_y][self.grid_x] = tmp_number
+                self.window.play_sound("sounds/number_input.wav")
                 self.focus_grid()
 
     def draw_grid(self):
@@ -265,13 +313,13 @@ class SudokuBoard(View):
         )
 
     def on_draw(self):
-        start = datetime.now()
+        # start = datetime.now()
         self.clear()
         self.draw_grid()
         self.window.ctx.flush()
         self.grid_sprite.draw()
-        end = datetime.now()
-        print(end - start)
+        # end = datetime.now()
+        # print(end - start)
 
     def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
         self.window.speech.output(f"{x}, {y}")
@@ -438,14 +486,13 @@ class MainMenu(Menu):
         super().__init__(name="Main menu")
         self.add_item("New game", self.new_game)
         self.add_item("Load game", self.load_game)
-        self.add_item("Exit game", self.window.close)
+        self.add_item("Exit game", arcade.exit)
 
     def new_game(self):
         new_game = SudokuBoard()
         self.window.show_view(new_game)
 
     def load_game(self):
-        # self.window.speech.output("Load game.")
         if len(glob.glob("data/*")) < 1:
             print(glob.glob("data/*"))
             self.window.speech.output("No save files exist.")
@@ -458,7 +505,7 @@ class LoadMenu(Menu):
     def __init__(self, prior_screen=None):
         super().__init__(name="Load game", prior_screen=prior_screen)
         self.save_dir = "data/"
-        if len(glob.glob(self.save_dir)):
+        if len(glob.glob(self.save_dir)) <= 0:
             self.window.show_view(self.prior_screen)
         self.list_saves()
 

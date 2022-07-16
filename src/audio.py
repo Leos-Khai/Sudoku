@@ -87,7 +87,7 @@ class SoundManager:
         else:
             buffer = None
             generator = StreamingGenerator.from_file(self.synthizer_context, path)
-        sound = Sound(self.synthizer_context, generator, buffer, **kwargs)
+        sound = Sound(path, self.synthizer_context, generator, buffer, **kwargs)
         sound.play()
         self.register_sound(sound)
         return sound
@@ -112,7 +112,8 @@ class SoundManager:
 
 
 class Sound:
-    def __init__(self, synthizer_context, generator, buffer=None, **kwargs):
+    def __init__(self, name, synthizer_context, generator, buffer=None, **kwargs):
+        self.name = name
         self.synthizer_context = synthizer_context
         self.buffer = buffer
         self.generator = generator
@@ -122,6 +123,9 @@ class Sound:
         self.destroyed = False
         self.set_source()
         self.set_properties(kwargs)
+
+    def __repr__(self):
+        return self.name
 
     @property
     def looping(self):
