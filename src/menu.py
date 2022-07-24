@@ -3,6 +3,7 @@ import arcade
 from screen import View
 from time import sleep
 
+
 class MenuItem:
     # Menu items: will be objects added to the Menu class in an array.
 
@@ -28,6 +29,11 @@ class MenuItem:
         """Trigger menu item. I.E Play"""
         self.action()
 
+    def has_action(self):
+        if self.action == None:
+            return None
+        return True
+
 
 class Menu(View):
     """The menu class of the menu screen.
@@ -42,12 +48,12 @@ class Menu(View):
         self.menu_item = []
         self.name = name
 
-    def add_item(self, name: str, action):
+    def add_item(self, name: str, action=None):
         """Append a menu item to the list
 
         Args:
             name (str): Name of the MenuItem
-            action (func): The callback that will trigger on invoke.
+            action (func/None): The callback that will trigger on invoke.
         """
         self.menu_item.append(MenuItem(name, action))
 
@@ -55,6 +61,8 @@ class Menu(View):
         self.window.play_sound("sounds/menu_open.wav")
         sleep(1)
         self.window.speech.output(f"{self.name}", True)
+        sleep(0.5)
+        self.focus_item()
 
     def focus_item(self):
         """
@@ -64,6 +72,9 @@ class Menu(View):
         """
         text = f"{self.menu_item[self.menu_pos]}, {self.menu_pos+1} of {len(self.menu_item)}"
         self.window.speech.output(text, True)
+
+    def current_item(self):
+        return str(self.menu_item[self.menu_pos])
 
     def scroll(self, direction: int):
         """
@@ -98,7 +109,10 @@ class Menu(View):
             if self.prior_screen != None:
                 self.window.play_sound("sounds/menu_close.wav")
                 self.window.show_view(self.prior_screen)
-        elif key == arcade.key.RETURN:
+        elif (
+            key == arcade.key.RETURN
+            and self.menu_item[self.menu_pos].has_action() != None
+        ):
             self.window.play_sound("sounds/menu_trigger.wav")
-            sleep(1)
+            sleep(0.5)
             self.menu_item[self.menu_pos].invoke()

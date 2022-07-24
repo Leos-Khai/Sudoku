@@ -10,3 +10,5 @@ ao2/
 *.txt
 sound_example/
 test_codes/
+*.log
+*.dat

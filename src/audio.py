@@ -60,6 +60,7 @@ class SoundManager:
         self.synthizer_context = synthizer_context
         self.buffer_cache = buffer_cache
         self.sounds = []
+        self.musics = []
         self.defaults = kwargs
 
     @property
@@ -239,7 +240,7 @@ class Sound:
             source = DirectSource(self.synthizer_context)
         elif isinstance(self.position, int) or isinstance(self.position, float):
             source = ScalarPannedSource(self.synthizer_context)
-            source.panning_scalar = self.position
+            source.panning_scalar.value = self.position
         elif isinstance(self.position, tuple):
             source = Source3D(self.synthizer_context)
             source.position.value = self.position

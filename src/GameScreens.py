@@ -25,11 +25,14 @@ class SudokuBoard(View):
         # variables for sprite and graphics.
         self.grid_sprite = arcade.SpriteList()
         self.num_textures = []
+        self.num_textures_err = []
 
         # variable for game logic.
         self.grid = []
         self.grid_x = 0
         self.grid_y = 0
+        self.sector_x = self.grid_x // 3 * 3
+        self.sector_y = self.grid_y // 3 * 3
         self.editable_list = []
         self.error_list = []
         self.editable = False
@@ -66,6 +69,18 @@ class SudokuBoard(View):
                 self.num_textures.append(arcade.Texture.create_empty(name, (50, 50)))
             else:
                 self.num_textures.append(arcade.Texture(name, image=image))
+
+        for i in range(0, 10):
+            name = str(i)
+            name = "E" + name
+            image = arcade.create_text_image(name, arcade.color.BRIGHT_PINK, 40)
+            if i == 0:
+                self.num_textures_err.append(
+                    arcade.Texture.create_empty(name, (50, 50))
+                )
+            else:
+                self.num_textures_err.append(arcade.Texture(name, image=image))
+
         for y in range(720, 0, -80):
             for x in range(80, 800, 80):
                 self.grid_sprite.append(
@@ -148,39 +163,59 @@ class SudokuBoard(View):
         else:
             text = f"The save file '{self.save_name}' has been loaded. Enjoy your game."
         self.window.speech.output(text, True)
-        self.window.sound.stream("sounds/music.mp3", gain=0.05, looping=True)
+        self.window.stream_music("sounds/game_play.mp3")
 
     def on_update(self, delta_time):
         i = 0
         for sprite in self.grid_sprite:
             row = i // 9
             col = i % 9
-            sprite.texture = self.num_textures[self.grid[row][col]]
+            if [row, col] in self.error_list:
+                sprite.texture = self.num_textures_err[self.grid[row][col]]
+            else:
+                sprite.texture = self.num_textures[self.grid[row][col]]
             i += 1
 
+        if (
+            not self.find_empty_square(self.grid)
+            and not len(self.error_list) > 0
+            and self.completed == False
+        ):
+            self.completed = True
+            victory = WinScreen(self)
+            self.window.show_view(victory)
+
+    def generate_error_list(self):
         if self.completed == False:
+            self.error_list = []
             try:
                 for i in range(81):
                     row = i // 9
                     col = i % 9
-                    if self.valid_location(self.grid, row, col, self.grid[row][col]):
-                        self.list_of_error.append((row, col))
+                    if (
+                        self.verify_square(row, col, self.grid[row][col])
+                        and self.grid[row][col] != 0
+                        and [row, col] in self.editable_list
+                    ):
+                        self.error_list.append([row, col])
             except IndexError:
                 print("An index error has occured")
 
     def focus_grid(self):
-        if [self.grid_y, self.grid_x] in self.editable_list:
+        if [self.grid_y, self.grid_x] in self.editable_list and self.completed == False:
             if self.grid[self.grid_y][self.grid_x] == 0:
                 text = f"Empty, editable"
             else:
                 text = f"{self.grid[self.grid_y][self.grid_x]}, editable"
         else:
             text = f"{self.grid[self.grid_y][self.grid_x]}"
-        grid = self.grid
+        if [self.grid_y, self.grid_x] in self.error_list:
+            text = f"{text}, error"
+        # grid = self.grid
         number = self.grid[self.grid_y][self.grid_x]
-        grid[self.grid_y][self.grid_x] = 0
-        text = f"{text}, {self.valid_location(grid, self.grid_y, self.grid_x, number)}"
-        grid[self.grid_y][self.grid_x] = number
+        # grid[self.grid_y][self.grid_x] = 0
+        # text = f"{text}, {self.valid_location(grid, self.grid_y, self.grid_x, number)}"
+        # grid[self.grid_y][self.grid_x] = number
         self.window.speech.output(text, True)
 
     def move_grid(self, y, x):
@@ -188,26 +223,33 @@ class SudokuBoard(View):
         tmp_y = self.grid_y
         ox = self.grid_x
         oy = self.grid_y
+        osx = self.sector_x
+        osy = self.sector_y
+
         if tmp_x + x < len(self.grid[tmp_y]) and tmp_x + x >= 0:
             # print(f"{len(self.grid[tmp_y])}")
             self.grid_x += x
+            self.sector_x = self.grid_x // 3 * 3
         if tmp_y + y < len(self.grid) and tmp_y + y >= 0:
             self.grid_y += y
+            self.sector_y = self.grid_y // 3 * 3
         if self.grid_x != ox or self.grid_y != oy:
-            self.window.sound.play("sounds/board_move.wav", gain=0.2)
+            self.window.play_sound(
+                "sounds/board_move.wav",
+                position=((self.grid_x * 5) - 20, (self.grid_y * -5) + 20, 0),
+            )
             self.focus_grid()
+        if self.sector_x != osx or self.sector_y != osy:
+            self.window.play_sound("sounds/diff_section.wav")
 
     def on_key_press(self, key, modifiers):
-        if key == arcade.key.Q and modifiers == arcade.key.MOD_ALT:
-            print(self.window.sound.sounds)
-            print(self.window.sound.synthizer_context.get_events())
-            for event in self.window.sound.synthizer_context.get_events():
-                print("hi")
-                sound = event.source.get_userdata()
-                print(sound)
-                print(event)
-                print(sound.on_finish)
-            
+        if key == arcade.key.X:
+            self.window.output(f"{self.grid_x+1}, {self.grid_y+1}")
+        elif key == arcade.key.Q and modifiers == arcade.key.MOD_ALT:
+            # self.focus_grid()
+            # print(self.error_list)
+            self.grid = copy.deepcopy(self.answer)
+            print(self.find_empty_square(self.grid))
         if key == arcade.key.S and modifiers == arcade.key.MOD_CTRL:
             self.saving = True
             if self.save_name != None:
@@ -247,14 +289,15 @@ class SudokuBoard(View):
                 self.move_grid(0, -1)
             elif key == arcade.key.RIGHT:
                 self.move_grid(0, 1)
-            elif key == arcade.key.BACKSPACE:
+            elif key == arcade.key.BACKSPACE and self.completed == False:
                 if [self.grid_y, self.grid_x] in self.editable_list and self.grid[
                     self.grid_y
                 ][self.grid_x] != 0:
                     self.grid[self.grid_y][self.grid_x] = 0
                     self.window.play_sound("sounds/number_delete.wav")
+                    self.generate_error_list()
                     self.window.speech.output(f"Removed number")
-            elif key == arcade.key.RETURN:
+            elif key == arcade.key.RETURN and self.completed == False:
                 if (
                     self.editable == False
                     and [self.grid_y, self.grid_x] in self.editable_list
@@ -268,6 +311,7 @@ class SudokuBoard(View):
                 self.editable = False
                 self.grid[self.grid_y][self.grid_x] = tmp_number
                 self.window.play_sound("sounds/number_input.wav")
+                self.generate_error_list()
                 self.focus_grid()
 
     def draw_grid(self):
@@ -321,10 +365,12 @@ class SudokuBoard(View):
         # end = datetime.now()
         # print(end - start)
 
+    """
     def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
         self.window.speech.output(f"{x}, {y}")
         print(x)
         print(y)
+        """
 
     def solve_input_sudoku(self):
         """solves a puzzle"""
@@ -391,6 +437,15 @@ class SudokuBoard(View):
             return False
         elif self.num_used_in_subgrid(grid, row, col, number):
             return False
+        return True
+
+    def verify_square(self, row, col, num):
+        number = self.grid[row][col]
+        self.grid[row][col] = 0
+        if self.valid_location(self.grid, row, col, number):
+            self.grid[row][col] = number
+            return False
+        self.grid[row][col] = number
         return True
 
     def find_empty_square(self, grid):
@@ -486,7 +541,11 @@ class MainMenu(Menu):
         super().__init__(name="Main menu")
         self.add_item("New game", self.new_game)
         self.add_item("Load game", self.load_game)
+        self.add_item("Options", self.options)
         self.add_item("Exit game", arcade.exit)
+
+    def on_show_view(self):
+        self.window.stream_music("sounds/menu_music.mp3")
 
     def new_game(self):
         new_game = SudokuBoard()
@@ -500,24 +559,111 @@ class MainMenu(Menu):
         load_game = LoadMenu(self)
         self.window.show_view(load_game)
 
+    def options(self):
+        options = OptionsMenu(self)
+        self.window.show_view(options)
+
 
 class LoadMenu(Menu):
     def __init__(self, prior_screen=None):
         super().__init__(name="Load game", prior_screen=prior_screen)
         self.save_dir = "data/"
+
+    def on_show(self):
         if len(glob.glob(self.save_dir)) <= 0:
             self.window.show_view(self.prior_screen)
         self.list_saves()
+        super().on_show()
 
     def list_saves(self):
+        self.menu_item = []
         for i in glob.iglob(self.save_dir + "*"):
             self.add_item(os.path.basename(i), self.load)
 
     def load(self):
-        if not glob.glob(
-            "data/" + str(self.menu_item[self.menu_pos]) + "/thing.thingy"
-        ) or not glob.glob("data/" + str(self.menu_item[self.menu_pos]) + "/save.dat"):
+        action = LoadOptions(self, self.current_item())
+        self.window.show_view(action)
+
+
+class LoadOptions(Menu):
+    def __init__(self, prior_screen, save):
+        super().__init__(name="Actions", prior_screen=prior_screen)
+        self.save = save
+        self.add_item("Load game", self.load)
+        self.add_item("Delete save", self.delete)
+
+    def load(self):
+        if not glob.glob("data/" + self.save + "/thing.thingy") or not glob.glob(
+            "data/" + self.save + "/save.dat"
+        ):
             self.window.speech.output("WARNING:: Save has been corrupted.")
             return
-        game = SudokuBoard(str(self.menu_item[self.menu_pos]))
+        game = SudokuBoard(self.save)
         self.window.show_view(game)
+
+    def delete(self):
+        os.remove("data/" + self.save + "/save.dat")
+        os.remove("data/" + self.save + "/thing.thingy")
+        os.rmdir("data/" + self.save)
+        main = MainMenu()
+        self.window.show_view(main)
+
+
+class OptionsMenu(Menu):
+    def __init__(self, prior_screen):
+        super().__init__(name="Options", prior_screen=prior_screen)
+        self.prior_screen = prior_screen
+        self.add_item("Sound volume")
+        self.add_item("Music volume")
+        self.add_item("Save", self.save)
+
+    def save(self):
+        self.window.show_view(self.prior_screen)
+
+    def on_hide_view(self):
+        self.window.save_options()
+
+    def on_key_press(self, key, key_modifiers):
+        if key == arcade.key.LEFT:
+            if self.current_item() == "Sound volume":
+                self.window.ajust_sound_volume(-5)
+                self.window.play_sound("sounds/board_move.wav")
+            elif self.current_item() == "Music volume":
+                self.window.ajust_music_volume(-5)
+
+        elif key == arcade.key.RIGHT:
+            if self.current_item() == "Sound volume":
+                self.window.ajust_sound_volume(5)
+                self.window.play_sound("sounds/board_move.wav")
+            elif self.current_item() == "Music volume":
+                self.window.ajust_music_volume(5)
+        super().on_key_press(key, key_modifiers)
+
+
+class PauseMenu(Menu):
+    def __init__(self, prior_screen):
+        super().__init__(name="Paused", prior_screen=prior_screen)
+        self.prior_screen = prior_screen
+        self.add_item("Resume game", self.resume)
+        self.add_item("Options", self.options)
+        self.add_item("Back to main menu", self.main_menu)
+        self.add_item("Exit", arcade.exit)
+
+
+class WinScreen(Menu):
+    def __init__(self, prior_screen):
+        super().__init__(name="Victory!", prior_screen=None)
+        self.prior_screen = prior_screen
+        self.add_item(
+            "Congradulation you have achieve VICTORY! Do you wish to return to the main menu? Or do you wish to explore the winning board.",
+            None,
+        )
+        self.add_item("Back to main menu.", self.main_menu)
+        self.add_item("Back to sudoku board.", self.back_to_board)
+
+    def main_menu(self):
+        main = MainMenu()
+        self.window.show_view(main)
+
+    def back_to_board(self):
+        self.window.show_view(self.prior_screen)

@@ -1,8 +1,4 @@
-appscript==1.2.0
-arcade==2.6.14
-libloader==0.21
-numpy==1.22.4
-platform_utils==0.41
-setuptools==62.3.2
+arcade==2.6.15
+cryptography==37.0.4
+numpy==1.23.1
 synthizer==0.12.3
-win32gui==221.6
