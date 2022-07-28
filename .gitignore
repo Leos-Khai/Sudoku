@@ -12,3 +12,6 @@ sound_example/
 test_codes/
 *.log
 *.dat
+Audio-Sudoku/
+main.build/
+main.dist/

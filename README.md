@@ -21,3 +21,6 @@
 - [ ] Use json files to allow different language to be use (Choice when game is
   loaded for the first time, A setting file will be generated.)
   
+Asset credits:
+Music by Eric Matyas
+www.soundimage.org
