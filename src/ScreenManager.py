@@ -1,6 +1,7 @@
 import arcade
 import glob
 import json
+from decimal import Decimal
 
 
 class ScreenControl(arcade.Window):
@@ -14,8 +15,8 @@ class ScreenControl(arcade.Window):
 
     def generate_options(self):
         if not glob.glob("options.dat"):
-            self.sound_volume = 0.5
-            self.music_volume = 0.1
+            self.sound_volume = -12
+            self.music_volume = -24
             options = {
                 "sound_volume": self.sound_volume,
                 "music_volume": self.music_volume,
@@ -41,19 +42,19 @@ class ScreenControl(arcade.Window):
         self.speech.output(text, True)
 
     def play_sound(self, path, **kwargs):
-        self.sound.play(path, gain=self.sound_volume, **kwargs)
+        self.sound.play(path, gain=10 ** (self.sound_volume / 20), **kwargs)
 
     def stream_music(self, path, **kwargs):
         if str(self.music) == path:
             return
         if self.music == None:
             self.music = self.sound.stream(
-                path, gain=self.music_volume, looping=True, **kwargs
+                path, gain=10 ** (self.music_volume / 20), looping=True, **kwargs
             )
         else:
             self.sound.unregister_sound(self.music)
             self.music = self.sound.stream(
-                path, gain=self.music_volume, looping=True, **kwargs
+                path, gain=10 ** (self.music_volume / 20), looping=True, **kwargs
             )
 
     def on_key_press(self, key, key_modifiers):
@@ -61,19 +62,17 @@ class ScreenControl(arcade.Window):
             arcade.exit()
 
     def ajust_sound_volume(self, volume):
-        tmpvol = int((self.sound_volume * 100)) + volume
-        tmpvol /= 100
-        if tmpvol >= 0.01 and tmpvol <= 1.01:
+        tmpvol = self.sound_volume + volume
+        if tmpvol > -60 and tmpvol <= 0:
             self.sound_volume = tmpvol
-            self.output(f"{int(self.sound_volume*100)}%")
+            self.output(f"{abs(int((60 + self.sound_volume)/60*100))}%")
 
     def ajust_music_volume(self, volume):
-        tmpvol = int((self.music_volume * 100)) + volume
-        tmpvol /= 100
-        if tmpvol >= 0.01 and tmpvol <= 1.01:
+        tmpvol = self.music_volume + volume
+        if tmpvol > -60 and tmpvol <= 0:
             self.music_volume = tmpvol
-            self.music.volume = self.music_volume
-            self.output(f"{int(self.music_volume*100)}%")
+            self.music.volume = 10 ** (self.music_volume / 20)
+            self.output(f"{abs(int((60 + self.music_volume)/60*100))}%")
 
     def on_update(self, delta_time: float):
         self.sound.update()

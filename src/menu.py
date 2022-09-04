@@ -97,6 +97,8 @@ class Menu(View):
             self.focus_item()
 
     def on_key_press(self, key, key_modifiers):
+        if key == arcade.key.T:
+            self.window.output(f"{self.name}")
         if key == arcade.key.UP:
             self.scroll(-1)
         elif key == arcade.key.DOWN:

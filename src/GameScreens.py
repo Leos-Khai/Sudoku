@@ -11,7 +11,6 @@ import os
 from cryptography.fernet import Fernet
 
 
-
 class SudokuBoard(View):
     """The view that going to process Sudoku game"""
 
@@ -235,7 +234,7 @@ class SudokuBoard(View):
         if self.grid_x != ox or self.grid_y != oy:
             self.window.play_sound(
                 "sounds/board_move.wav",
-                position=((self.grid_x * 5) - 20, (self.grid_y * -5) + 20, 0),
+                position=((self.grid_x * 5) - 20, (self.grid_y * -5) + 20, 10),
             )
             self.focus_grid()
         if self.sector_x != osx or self.sector_y != osy:
@@ -625,17 +624,17 @@ class OptionsMenu(Menu):
     def on_key_press(self, key, key_modifiers):
         if key == arcade.key.LEFT:
             if self.current_item() == "Sound volume":
-                self.window.ajust_sound_volume(-5)
+                self.window.ajust_sound_volume(-3)
                 self.window.play_sound("sounds/board_move.wav")
             elif self.current_item() == "Music volume":
-                self.window.ajust_music_volume(-5)
+                self.window.ajust_music_volume(-3)
 
         elif key == arcade.key.RIGHT:
             if self.current_item() == "Sound volume":
-                self.window.ajust_sound_volume(5)
+                self.window.ajust_sound_volume(3)
                 self.window.play_sound("sounds/board_move.wav")
             elif self.current_item() == "Music volume":
-                self.window.ajust_music_volume(5)
+                self.window.ajust_music_volume(3)
         super().on_key_press(key, key_modifiers)
 
 
@@ -647,6 +646,15 @@ class PauseMenu(Menu):
         self.add_item("Options", self.options)
         self.add_item("Back to main menu", self.main_menu)
         self.add_item("Exit", arcade.exit)
+
+    def resume(self):
+        pass
+
+    def options(self):
+        pass
+
+        def main_menu(self):
+            pass
 
 
 class WinScreen(Menu):
