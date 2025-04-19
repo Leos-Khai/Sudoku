@@ -1,4 +1,0 @@
-arcade==2.6.15
-cryptography==37.0.4
-numpy==1.23.1
-synthizer==0.12.3
