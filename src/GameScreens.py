@@ -1,8 +1,5 @@
-from lzma import MODE_FAST
-import arcade
 from screen import View
-from menu import Menu, MenuItem
-from datetime import datetime
+from menu import Menu
 import copy
 from random import shuffle
 import json
@@ -11,21 +8,37 @@ import os
 from cryptography.fernet import Fernet
 
 
+# Keyboard constants to replace arcade.key
+class Keys:
+    X = 120  # ASCII value for 'x'
+    Q = 113  # ASCII value for 'q'
+    S = 115  # ASCII value for 's'
+    UP = 65362
+    DOWN = 65364
+    LEFT = 65361
+    RIGHT = 65363
+    BACKSPACE = 65288
+    RETURN = 65293
+    MOD_CTRL = 1
+    MOD_ALT = 2
+
+
+def exit_game():
+    import sys
+
+    sys.exit()
+
+
 class SudokuBoard(View):
     """The view that going to process Sudoku game"""
 
     def __init__(self, sudoku_game=None, prior_screen=None):
         super().__init__(prior_screen)
-        # variables for sudoku logic.
+        # variables for sudoku logic
         self.counter = 0
         self.path = []
 
-        # variables for sprite and graphics.
-        self.grid_sprite = arcade.SpriteList()
-        self.num_textures = []
-        self.num_textures_err = []
-
-        # variable for game logic.
+        # variable for game logic
         self.grid = []
         self.grid_x = 0
         self.grid_y = 0
@@ -40,11 +53,10 @@ class SudokuBoard(View):
         self.save_name = sudoku_game
         self.completed = None
 
-        # variables setting for game difficulty.
+        # variables setting for game difficulty
         self.warn_duplication = True
 
         if sudoku_game != None:
-            self.generate_sprite()
             self.path_to_save = "data/" + self.save_name + "/"
             self.load_game()
             try:
@@ -55,39 +67,8 @@ class SudokuBoard(View):
             except:
                 print("error")
         else:
-            self.generate_sprite()
             self.generate_game()
             self.generate_editables()
-
-    def generate_sprite(self):
-        for i in range(0, 10):
-            name = str(i)
-            image = arcade.create_text_image(name, arcade.color.WHITE, 40)
-            if i == 0:
-                self.num_textures.append(arcade.Texture.create_empty(name, (50, 50)))
-            else:
-                self.num_textures.append(arcade.Texture(name, image=image))
-
-        for i in range(0, 10):
-            name = str(i)
-            name = "E" + name
-            image = arcade.create_text_image(name, arcade.color.BRIGHT_PINK, 40)
-            if i == 0:
-                self.num_textures_err.append(
-                    arcade.Texture.create_empty(name, (50, 50))
-                )
-            else:
-                self.num_textures_err.append(arcade.Texture(name, image=image))
-
-        for y in range(720, 0, -80):
-            for x in range(80, 800, 80):
-                self.grid_sprite.append(
-                    arcade.Sprite(
-                        texture=self.num_textures[1],
-                        center_x=x,
-                        center_y=y,
-                    )
-                )
 
     def save_game(self):
         if self.save_name == None:
@@ -155,25 +136,7 @@ class SudokuBoard(View):
         self.remove_numbers_from_grid()
         self.completed = False
 
-    def on_show_view(self):
-        if self.save_name == None:
-            text = f"Welcome to Sudoku."
-        else:
-            text = f"The save file '{self.save_name}' has been loaded. Enjoy your game."
-        self.window.speech.output(text, True)
-        self.window.stream_music("sounds/game_play.mp3")
-
     def on_update(self, delta_time):
-        i = 0
-        for sprite in self.grid_sprite:
-            row = i // 9
-            col = i % 9
-            if [row, col] in self.error_list:
-                sprite.texture = self.num_textures_err[self.grid[row][col]]
-            else:
-                sprite.texture = self.num_textures[self.grid[row][col]]
-            i += 1
-
         if (
             not self.find_empty_square(self.grid)
             and not len(self.error_list) > 0
@@ -234,21 +197,21 @@ class SudokuBoard(View):
         if self.grid_x != ox or self.grid_y != oy:
             self.window.play_sound(
                 "sounds/board_move.wav",
-                position=((self.grid_x * 5) - 20, (self.grid_y * -5) + 20, 10),
+                position=((self.grid_x * 5) - 20, (self.grid_y * -5) + 20, 10.0),
             )
             self.focus_grid()
         if self.sector_x != osx or self.sector_y != osy:
             self.window.play_sound("sounds/diff_section.wav")
 
     def on_key_press(self, key, modifiers):
-        if key == arcade.key.X:
+        if key == Keys.X:
             self.window.output(f"{self.grid_x+1}, {self.grid_y+1}")
-        elif key == arcade.key.Q and modifiers == arcade.key.MOD_ALT:
+        elif key == Keys.Q and modifiers == Keys.MOD_ALT:
             # self.focus_grid()
             # print(self.error_list)
             self.grid = copy.deepcopy(self.answer)
             print(self.find_empty_square(self.grid))
-        if key == arcade.key.S and modifiers == arcade.key.MOD_CTRL:
+        if key == Keys.S and modifiers == Keys.MOD_CTRL:
             self.saving = True
             if self.save_name != None:
                 self.save_game()
@@ -265,12 +228,12 @@ class SudokuBoard(View):
                 else:
                     self.typing += chr(key)
                     self.window.play_sound("sounds/single_type.wav")
-            elif key == arcade.key.BACKSPACE:
+            elif key == Keys.BACKSPACE:
                 if self.typing != None and len(self.typing) > 0:
                     delchar = self.typing[-1]
                     self.typing = self.typing[:-1]
                     self.window.output(delchar)
-            elif key == arcade.key.RETURN:
+            elif key == Keys.RETURN:
                 self.save_name = self.typing
                 self.typing = None
                 self.save_game()
@@ -279,15 +242,15 @@ class SudokuBoard(View):
                 self.saving = False
 
         elif self.editable != True and self.saving != True:
-            if key == arcade.key.UP:
+            if key == Keys.UP:
                 self.move_grid(-1, 0)
-            elif key == arcade.key.DOWN:
+            elif key == Keys.DOWN:
                 self.move_grid(1, 0)
-            elif key == arcade.key.LEFT:
+            elif key == Keys.LEFT:
                 self.move_grid(0, -1)
-            elif key == arcade.key.RIGHT:
+            elif key == Keys.RIGHT:
                 self.move_grid(0, 1)
-            elif key == arcade.key.BACKSPACE and self.completed == False:
+            elif key == Keys.BACKSPACE and self.completed == False:
                 if [self.grid_y, self.grid_x] in self.editable_list and self.grid[
                     self.grid_y
                 ][self.grid_x] != 0:
@@ -295,7 +258,7 @@ class SudokuBoard(View):
                     self.window.play_sound("sounds/number_delete.wav")
                     self.generate_error_list()
                     self.window.speech.output(f"Removed number")
-            elif key == arcade.key.RETURN and self.completed == False:
+            elif key == Keys.RETURN and self.completed == False:
                 if (
                     self.editable == False
                     and [self.grid_y, self.grid_x] in self.editable_list
@@ -312,62 +275,10 @@ class SudokuBoard(View):
                 self.generate_error_list()
                 self.focus_grid()
 
-    def draw_grid(self):
-        listp = []
-        tmpx = 40
-        tmpy = 760
-        for x in range(11):
-            listp.append([tmpx, tmpy])
-            listp.append([tmpx, 40])
-            tmpx += 80
-        for y in range(11):
-            listp.append([40, tmpy])
-            listp.append([760, tmpy])
-            tmpy -= 80
-        arcade.draw_lines(
-            listp,
-            arcade.color.WHITE,
-            2,
-        )
-        listp2 = [
-            [40, 760],
-            [40, 40],
-            [280, 760],
-            [280, 40],
-            [520, 760],
-            [520, 40],
-            [760, 760],
-            [760, 40],
-            [40, 760],
-            [760, 760],
-            [40, 520],
-            [760, 520],
-            [40, 280],
-            [760, 280],
-            [40, 40],
-            [760, 40],
-        ]
-
-        arcade.draw_lines(
-            listp2,
-            arcade.color.WHITE,
-            5,
-        )
-
-    def on_draw(self):
-        # start = datetime.now()
-        self.clear()
-        self.draw_grid()
-        self.window.ctx.flush()
-        self.grid_sprite.draw()
-        # end = datetime.now()
-        # print(end - start)
-
     """
     def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
         self.window.speech.output(f"{x}, {y}")
         print(x)
-        print(y)
         """
 
     def solve_input_sudoku(self):
@@ -540,10 +451,17 @@ class MainMenu(Menu):
         self.add_item("New game", self.new_game)
         self.add_item("Load game", self.load_game)
         self.add_item("Options", self.options)
-        self.add_item("Exit game", arcade.exit)
+        self.add_item("Exit game", exit_game)
 
     def on_show_view(self):
-        self.window.stream_music("sounds/menu_music.mp3")
+        # Try to play menu music, with fallback options
+        music_files = [
+            "sounds/menu_music.wav",
+            "sounds/Celtic_Folk Music - Vindsvept - Sanctuary.wav",
+        ]
+        for music_file in music_files:
+            if self.window.stream_music(music_file):
+                break
 
     def new_game(self):
         new_game = SudokuBoard()
@@ -622,14 +540,14 @@ class OptionsMenu(Menu):
         self.window.save_options()
 
     def on_key_press(self, key, key_modifiers):
-        if key == arcade.key.LEFT:
+        if key == Keys.LEFT:
             if self.current_item() == "Sound volume":
                 self.window.ajust_sound_volume(-3)
                 self.window.play_sound("sounds/board_move.wav")
             elif self.current_item() == "Music volume":
                 self.window.ajust_music_volume(-3)
 
-        elif key == arcade.key.RIGHT:
+        elif key == Keys.RIGHT:
             if self.current_item() == "Sound volume":
                 self.window.ajust_sound_volume(3)
                 self.window.play_sound("sounds/board_move.wav")
@@ -645,7 +563,7 @@ class PauseMenu(Menu):
         self.add_item("Resume game", self.resume)
         self.add_item("Options", self.options)
         self.add_item("Back to main menu", self.main_menu)
-        self.add_item("Exit", arcade.exit)
+        self.add_item("Exit", exit_game)
 
     def resume(self):
         pass
