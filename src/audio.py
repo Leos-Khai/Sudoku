@@ -1,55 +1,50 @@
 import os
+import time
+import wave
+from ctypes import c_float, c_int, c_long, c_uint, pointer
+
 from openal import (
-    oalInit,
-    oalGetDevice,
-    oalGetContext,
-    oalQuit,
-    oalGetListener,
-    alcOpenDevice,
-    alcCreateContext,
-    alcMakeContextCurrent,
-    alcCloseDevice,
-    alcGetCurrentContext,
-    alcDestroyContext,  # Added for proper context cleanup
-    oalGetDevice,  # Added for device cleanup
-    alGenBuffers,
-    alBufferData,
-    alDeleteBuffers,
-    alGenSources,
-    alSourcei,
-    alDeleteSources,
-    alSourceStop,
-    alGetSourcei,
-    alGetSourcef,
-    alGetSource3f,
-    alSourcef,
-    alSource3f,
-    alSourcePause,
-    alSourcePlay,
-    alSourceRewind,
+    AL_BUFFER,
+    AL_FALSE,
     AL_FORMAT_MONO8,
     AL_FORMAT_MONO16,
     AL_FORMAT_STEREO8,
     AL_FORMAT_STEREO16,
-    AL_BUFFER,
-    AL_LOOPING,
     AL_GAIN,
+    AL_LOOPING,
+    AL_NO_ERROR,
+    AL_PLAYING,
     AL_POSITION,
-    AL_VELOCITY,
-    AL_ORIENTATION,
     AL_SOURCE_STATE,
     AL_TRUE,
-    AL_FALSE,
-    AL_PLAYING,
+    AL_VELOCITY,
+    alBufferData,
+    alcCloseDevice,
+    alcCreateContext,
+    alcDestroyContext,
+    alcGetCurrentContext,
+    alcMakeContextCurrent,
+    alcOpenDevice,
+    alDeleteBuffers,
+    alDeleteSources,
+    alGenBuffers,
+    alGenSources,
     alGetError,
-    AL_NO_ERROR,
+    alGetSource3f,
+    alGetSourcef,
+    alGetSourcei,
+    alSource3f,
+    alSourcef,
+    alSourcei,
+    alSourcePause,
+    alSourcePlay,
+    alSourceRewind,
+    alSourceStop,
+    oalGetDevice,
+    oalGetListener,
+    oalInit,
+    oalQuit,
 )
-import wave
-import time
-import numpy as np
-from ctypes import c_uint, c_long, c_float, c_int, pointer
-
-# Removed unnecessary ctypes import here
 
 
 class BufferCache:
@@ -107,11 +102,7 @@ class BufferCache:
             try:
                 # Check file extension and convert if needed
                 if not path.lower().endswith(".wav"):
-                    print(
-                        f"Warning: {path} is not a WAV file. Only WAV files are supported."
-                    )
-                    # TODO: Add conversion from MP3/OGG to WAV using a library like pydub
-                    # For now, try to find a WAV version with the same name
+                    print(f"Warning: {path} is not a WAV file. Only WAV is supported.")
                     wav_path = path.rsplit(".", 1)[0] + ".wav"
                     if os.path.exists(wav_path):
                         print(f"Found WAV alternative: {wav_path}")
@@ -140,7 +131,8 @@ class BufferCache:
 
                     print(f"Debug: Loading WAV file: {abs_path}")
                     print(
-                        f"Debug: Audio params - channels: {channels}, width: {width}, rate: {rate}, frame length: {len(frames)}"
+                        f"Debug: Audio params - channels: {channels}, width: {width}, "
+                        f"rate: {rate}, frame length: {len(frames)}"
                     )
 
                     # Map sample width to OpenAL format
@@ -172,7 +164,8 @@ class BufferCache:
                     # Validate parameters before calling alBufferData
                     if not all([buffer, al_format, frames, rate]):
                         print(
-                            f"Error: Invalid buffer parameters - format: {al_format}, frames length: {len(frames)}, rate: {rate}"
+                            f"Error: Invalid buffer parameters - format: {al_format}, "
+                            f"frames length: {len(frames)}, rate: {rate}"
                         )
                         alDeleteBuffers(1, pointer(c_uint(buffer)))
                         return None
@@ -186,7 +179,6 @@ class BufferCache:
                         current_context_before_data = alcGetCurrentContext()
                         if not current_context_before_data:
                             print("Error: OpenAL context lost before alBufferData!")
-                            # Fix: Pass the buffer ID directly
                             alDeleteBuffers(buffer)
                             return None
 
@@ -203,12 +195,10 @@ class BufferCache:
                         error = alGetError()
                         if error != AL_NO_ERROR:
                             print(f"OpenAL Error after alBufferData: {error}")
-                            # Fix: Pass the buffer ID directly
                             alDeleteBuffers(buffer)
                             return None
                     except Exception as e:
                         print(f"Python Exception during buffer data loading: {e}")
-                        # Fix: Pass the buffer ID directly
                         alDeleteBuffers(buffer)
                         return None
 
@@ -354,7 +344,6 @@ class SoundManager:
         self.context = None
         self.buffer_cache = buffer_cache
         self.sounds = []
-        self.musics = []
         self.defaults = kwargs
 
         try:
@@ -362,7 +351,7 @@ class SoundManager:
             oalInit()
             alGetError()  # Clear any previous errors
 
-            # Create new device - don't try to get existing one since oalGetDevice is not reliable
+            # Open a fresh device; oalGetDevice is not reliable
             self.device = alcOpenDevice(None)
             if not self.device:
                 raise Exception("Could not open audio device")
@@ -396,16 +385,16 @@ class SoundManager:
                 try:
                     alcMakeContextCurrent(None)
                     alcDestroyContext(self.context)
-                except:
+                except Exception:
                     pass
                 self.context = None
             if self.device:
                 try:
                     alcCloseDevice(self.device)
-                except:
+                except Exception:
                     pass
                 self.device = None
-            raise Exception(f"Failed to initialize audio system: {e}")
+            raise Exception(f"Failed to initialize audio system: {e}") from e
 
     def register_sound(self, sound):
         self.sounds.append(sound)
@@ -430,7 +419,6 @@ class SoundManager:
                     sound.destroy()
                 except Exception as e:
                     print(f"Error stopping sound: {e}")
-            self.musics.clear()
 
             # Clean up buffer cache
             if hasattr(self.buffer_cache, "destroy_all"):

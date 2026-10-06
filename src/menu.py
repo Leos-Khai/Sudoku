@@ -1,7 +1,8 @@
-from codecs import backslashreplace_errors
-import arcade
-from screen import View
 from time import sleep
+
+import arcade
+
+from screen import View
 
 
 class MenuItem:
@@ -30,9 +31,7 @@ class MenuItem:
         self.action()
 
     def has_action(self):
-        if self.action == None:
-            return None
-        return True
+        return self.action is not None
 
 
 class Menu(View):
@@ -70,7 +69,8 @@ class Menu(View):
 
         Will read the associated text of a menu item via TTS.
         """
-        text = f"{self.menu_item[self.menu_pos]}, {self.menu_pos+1} of {len(self.menu_item)}"
+        item = self.menu_item[self.menu_pos]
+        text = f"{item}, {self.menu_pos + 1} of {len(self.menu_item)}"
         self.window.speech.output(text, True)
 
     def current_item(self):
@@ -83,7 +83,8 @@ class Menu(View):
         Scroll menu item up and down
 
         Args:
-            direction (Integer ): Usually +1 or -1 to move up and down from the list. Length of array if home and end key is use to jump to start and end of menu respectively.
+            direction (int): Usually +1 or -1 to move one item. The menu length
+                jumps to the start or end (home and end keys).
         """
         tmp = self.menu_pos + direction
         if tmp < 0:
@@ -108,13 +109,10 @@ class Menu(View):
         elif key == arcade.key.END:
             self.scroll(+len(self.menu_item))
         elif key == arcade.key.BACKSPACE:
-            if self.prior_screen != None:
+            if self.prior_screen is not None:
                 self.window.play_sound("sounds/menu_close.wav")
                 self.window.show_view(self.prior_screen)
-        elif (
-            key == arcade.key.RETURN
-            and self.menu_item[self.menu_pos].has_action() != None
-        ):
+        elif key == arcade.key.RETURN and self.menu_item[self.menu_pos].has_action():
             self.window.play_sound("sounds/menu_trigger.wav")
             sleep(0.5)
             self.menu_item[self.menu_pos].invoke()

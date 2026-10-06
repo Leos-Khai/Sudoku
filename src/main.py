@@ -1,8 +1,9 @@
 import arcade
-import ScreenManager
-from GameScreens import MainMenu, SudokuBoard
-from speech import Speech
+
+import screen_manager
 from audio import BufferCache, SoundManager
+from game_screens import MainMenu
+from speech import Speech
 
 WIDTH = HEIGHT = 800
 TITLE = "Sudoku"
@@ -15,7 +16,7 @@ def main():
     speech = Speech()
 
     # Create and run game
-    game = ScreenManager.ScreenControl(WIDTH, HEIGHT, TITLE, speech, sm)
+    game = screen_manager.ScreenControl(WIDTH, HEIGHT, TITLE, speech, sm)
     screen1 = MainMenu()
     game.show(screen1)
 

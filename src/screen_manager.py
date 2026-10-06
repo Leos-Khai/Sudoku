@@ -1,8 +1,8 @@
-import arcade
 import glob
 import json
 import os
-from decimal import Decimal
+
+import arcade
 
 
 class ScreenControl(arcade.Window):
@@ -34,7 +34,7 @@ class ScreenControl(arcade.Window):
             with open("options.dat", "w") as f:
                 json.dump(options, f)
             return
-        with open("options.dat", "r") as f:
+        with open("options.dat") as f:
             data = json.load(f)
         self.sound_volume = data["sound_volume"]
         self.music_volume = data["music_volume"]
@@ -95,9 +95,7 @@ class ScreenControl(arcade.Window):
                     print(f"Using WAV alternative: {wav_path}")
                     path = wav_path
                 else:
-                    print(
-                        f"Note: Music playback requires WAV format. Convert {path} to WAV for audio support."
-                    )
+                    print(f"Note: Music playback requires WAV. Convert {path} to WAV.")
                     return None
 
             # Start new music stream
@@ -117,7 +115,7 @@ class ScreenControl(arcade.Window):
         if key == arcade.key.ESCAPE:
             arcade.exit()
 
-    def ajust_sound_volume(self, volume):
+    def adjust_sound_volume(self, volume):
         try:
             tmpvol = self.sound_volume + volume
             if tmpvol > -60 and tmpvol <= 0:
@@ -129,7 +127,7 @@ class ScreenControl(arcade.Window):
         except Exception as e:
             print(f"Error adjusting sound volume: {e}")
 
-    def ajust_music_volume(self, volume):
+    def adjust_music_volume(self, volume):
         try:
             tmpvol = self.music_volume + volume
             if tmpvol > -60 and tmpvol <= 0:
