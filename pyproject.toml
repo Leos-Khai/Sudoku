@@ -6,8 +6,8 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "accessible-output2>=0.17",
-    "arcade>=3.1.0",
-    "cryptography>=44.0.2",
+    "arcade>=3.3.3",
+    "cryptography>=50.0.0",
     "pyopenal>=0.7.11a1",
 ]
 
@@ -22,3 +22,7 @@ src = ["src"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "N", "UP", "B"]
+
+[tool.uv]
+# arcade 3.3.x pins pillow~=11.3.0; Pillow < 12.3.0 has open security advisories.
+override-dependencies = ["pillow>=12.3.0"]
