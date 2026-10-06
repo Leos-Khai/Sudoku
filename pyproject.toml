@@ -1,14 +1,24 @@
 [project]
 name = "sudoku"
 version = "0.1.0"
-description = "Add your description here"
+description = "An accessible, screen-reader-friendly Sudoku game"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "accessible-output2>=0.17",
     "arcade>=3.1.0",
     "cryptography>=44.0.2",
-    "nuitka>=2.6.9",
-    "numpy>=2.2.4",
     "pyopenal>=0.7.11a1",
 ]
+
+[dependency-groups]
+dev = [
+    "nuitka>=2.6.9",
+    "ruff>=0.9",
+]
+
+[tool.ruff]
+src = ["src"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B"]

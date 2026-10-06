@@ -1,9 +1,22 @@
 # Sudoku
  A sudoku game with accessibility
 - [Sudoku](#sudoku)
+  - [Running](#running)
   - [Feature to be added.](#feature-to-be-added)
   - [Visual component](#visual-component)
   - [Possible features:](#possible-features)
+
+## Running
+Requires [uv](https://docs.astral.sh/uv/). Run from the repository root.
+Sound files go in `src/sounds/`. They are not tracked in git.
+
+```
+uv sync                   # install Python 3.13 and dependencies
+uv run src/main.py        # start the game (or run.bat)
+uv run ruff check src     # lint
+uv run ruff format src    # format
+build.bat                 # standalone Windows build with Nuitka
+```
 
 ## Feature to be added.
 - [x] Full keyboard control. Arrow keys enter, backspace.

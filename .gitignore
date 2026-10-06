@@ -1,17 +1,43 @@
-env/
-/logs
+# Python
 __pycache__/
-accessible_output2/
-*.wav
-*.mp3
-ao2/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Tooling caches
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/
+
+# Nuitka build output
+*.build/
+*.dist/
+*.onefile-build/
+nuitka-crash-report.xml
+
+# Runtime data: saves, options, logs
 **/data
 **/thing
-*.txt
-sound_example/
-test_codes/
-*.log
 *.dat
+*.log
+/logs
+
+# Local assets and libraries
+*.wav
+*.mp3
+accessible_output2/
+ao2/
+sound_example/
 Audio-Sudoku/
-main.build/
-main.dist/
+
+# Scratch
+*.txt
+test_codes/
+
+# Editors and OS
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
